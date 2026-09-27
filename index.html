@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>VibeCraft</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; }
+        #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); color: white; cursor: pointer; z-index: 10; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; transform: translate(-50%, -50%); pointer-events: none; }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.8); }
+        #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
+        #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h1>VibeCraft</h1>
+        <p>Click to Start (WASD to Move, SPACE to Jump, Mouse to Look)</p>
+    </div>
+    <div id="crosshair"></div>
+
+    <!-- Import maps polyfill -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+
+    <!-- Import Three.js -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+        // 1. Scene Setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x87CEEB, 10, 40);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 5, 0);
+
+        // Turn off antialiasing to maximize FPS on integrated graphics
+        const renderer = new THREE.WebGLRenderer({ antialias: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 2. Lighting
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(20, 50, 20);
+        scene.add(sun);
+
+        // 3. Terrain Generation (Using InstancedMesh for performance)
+        const worldSize = 32; // 32x32 chunk
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        
+        // Block Materials (Grass top, Dirt sides/bottom)
+        const dirt = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+        const grass = new THREE.MeshLambertMaterial({ color: 0x3cb371 });
+        const materials = [dirt, dirt, grass, dirt, dirt, dirt]; 
+
+        const totalBlocks = worldSize * worldSize;
+        const instancedMesh = new THREE.InstancedMesh(geometry, materials, totalBlocks);
+        
+        const matrix = new THREE.Matrix4();
+        let i = 0;
+        for (let x = 0; x < worldSize; x++) {
+            for (let z = 0; z < worldSize; z++) {
+                // Generate slight height variation
+                let y = Math.floor(Math.random() * 2); 
+                matrix.setPosition(x - worldSize/2, y, z - worldSize/2);
+                instancedMesh.setMatrixAt(i, matrix);
+                i++;
+            }
+        }
+        scene.add(instancedMesh);
+
+        // 4. Player Controls (Keyboard & Mouse)
+        const controls = new PointerLockControls(camera, document.body);
+        const ui = document.getElementById('ui');
+
+        ui.addEventListener('click', () => controls.lock());
+        controls.addEventListener('lock', () => ui.style.display = 'none');
+        controls.addEventListener('unlock', () => ui.style.display = 'flex');
+        scene.add(controls.getObject());
+
+        const keys = { w: false, a: false, s: false, d: false, space: false };
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyW') keys.w = true;
+            if (e.code === 'KeyA') keys.a = true;
+            if (e.code === 'KeyS') keys.s = true;
+            if (e.code === 'KeyD') keys.d = true;
+            if (e.code === 'Space') keys.space = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyW') keys.w = false;
+            if (e.code === 'KeyA') keys.a = false;
+            if (e.code === 'KeyS') keys.s = false;
+            if (e.code === 'KeyD') keys.d = false;
+            if (e.code === 'Space') keys.space = false;
+        });
+
+        // 5. Physics and Game Loop
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        let prevTime = performance.now();
+        let canJump = false;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = performance.now();
+
+            if (controls.isLocked) {
+                const delta = (time - prevTime) / 1000;
+
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+                velocity.y -= 9.8 * 5.0 * delta; // Gravity
+
+                direction.z = Number(keys.w) - Number(keys.s);
+                direction.x = Number(keys.d) - Number(keys.a);
+                direction.normalize();
+
+                if (keys.w || keys.s) velocity.z -= direction.z * 40.0 * delta;
+                if (keys.a || keys.d) velocity.x -= direction.x * 40.0 * delta;
+
+                controls.moveRight(-velocity.x * delta);
+                controls.moveForward(-velocity.z * delta);
+                controls.getObject().position.y += velocity.y * delta;
+
+                // Basic Floor Collision
+                if (controls.getObject().position.y < 3) {
+                    velocity.y = 0;
+                    controls.getObject().position.y = 3;
+                    canJump = true;
+                }
+
+                if (keys.space && canJump) {
+                    velocity.y = 15; // Jump strength
+                    canJump = false;
+                }
+            }
+            prevTime = time;
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
