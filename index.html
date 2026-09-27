@@ -5,35 +5,120 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>VibeCraft Mobile</title>
     <style>
-        * { touch-action: none; user-select: none; -webkit-user-select: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #87CEEB; font-family: sans-serif; }
+        * { touch-action: none; user-select: none; -webkit-user-select: none; box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #111; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
+        /* ---------------- UI MENUS ---------------- */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(18, 18, 24, 0.92); color: white; z-index: 100; padding: 20px; }
+        .hidden { display: none !important; }
+        
+        h1 { font-size: 36px; margin-bottom: 20px; color: #55a02e; text-shadow: 2px 2px #000; text-transform: uppercase; letter-spacing: 2px; }
+        .menu-box { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
+        
+        label { font-size: 14px; color: #aaa; margin-bottom: -6px; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #333; background: #222; color: #fff; font-size: 16px; outline: none; text-align: center; }
+        input[type="text"]:focus, select:focus { border-color: #55a02e; }
+        
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: #55a02e; color: white; font-size: 16px; font-weight: bold; cursor: pointer; text-shadow: 1px 1px #000; box-shadow: 0 4px #3b731f; transition: transform 0.1s; }
+        .btn:active { transform: translateY(3px); box-shadow: 0 1px #3b731f; }
+        .btn-secondary { background: #444; box-shadow: 0 4px #222; }
+        .btn-secondary:active { box-shadow: 0 1px #222; }
+
+        .code-display { font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #ffca28; background: #222; padding: 10px; border-radius: 8px; text-align: center; border: 2px dashed #ffca28; }
+
+        /* ---------------- GAME HUD ---------------- */
         #crosshair { position: absolute; top: 40%; left: 50%; width: 8px; height: 8px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; }
-        
-        /* Touch Zone to Look Around (Upper 70% of screen) */
         #look-zone { position: absolute; top: 0; left: 0; width: 100%; height: 70%; z-index: 5; }
-
-        /* Controls Area (Bottom 30% of screen) */
         #controls-zone { position: absolute; bottom: 0; left: 0; width: 100%; height: 30%; z-index: 10; pointer-events: none; }
-
-        /* Joystick Styling */
+        
         #joystick-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; pointer-events: auto; }
-        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255, 255, 255, 0.7); border-radius: 50%; transition: transform 0.05s ease-out; }
-
-        /* Jump Button */
+        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255, 255, 255, 0.7); border-radius: 50%; }
         #btn-jump { position: absolute; bottom: 50px; right: 40px; width: 80px; height: 80px; background: rgba(255, 255, 255, 0.3); border: 2px solid white; border-radius: 50%; color: white; font-weight: bold; font-size: 28px; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
-        #btn-jump:active { background: rgba(255, 255, 255, 0.7); }
+        
+        #player-tag { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; z-index: 10; }
     </style>
 </head>
 <body>
+
+    <!-- HUD Overlay -->
     <div id="crosshair"></div>
     <div id="look-zone"></div>
-    
+    <div id="player-tag">Player: Guest</div>
     <div id="controls-zone">
-        <div id="joystick-base">
-            <div id="joystick-knob"></div>
-        </div>
+        <div id="joystick-base"><div id="joystick-knob"></div></div>
         <div id="btn-jump">▲</div>
+    </div>
+
+    <!-- MAIN MENU -->
+    <div id="menu-main" class="overlay">
+        <h1>VibeCraft</h1>
+        <div class="menu-box">
+            <label>Player Name</label>
+            <input type="text" id="username" value="Steve" maxlength="12">
+            
+            <button class="btn" id="btn-play-menu">PLAY</button>
+            <button class="btn btn-secondary" id="btn-settings-menu">SETTINGS</button>
+        </div>
+    </div>
+
+    <!-- PLAY SUB-MENU -->
+    <div id="menu-play" class="overlay hidden">
+        <h1>Select Mode</h1>
+        <div class="menu-box">
+            <button class="btn" id="btn-mode-single">Single Player</button>
+            <button class="btn" id="btn-mode-host">Host Game (Colab)</button>
+            <button class="btn" id="btn-mode-join">Join Host (Code)</button>
+            <button class="btn btn-secondary" id="btn-mode-net">Join via Internet</button>
+            <button class="btn btn-secondary" id="btn-back-main" style="margin-top: 10px;">Back</button>
+        </div>
+    </div>
+
+    <!-- HOST ROOM MENU -->
+    <div id="menu-host" class="overlay hidden">
+        <h1>Hosting Game</h1>
+        <div class="menu-box">
+            <label>Colab Server URL</label>
+            <input type="text" id="server-url" placeholder="wss://xxxx.ngrok-free.app">
+            <label>Your Room Code</label>
+            <div id="host-code" class="code-display">------</div>
+            <button class="btn" id="btn-start-host">Start Server & Play</button>
+            <button class="btn btn-secondary" id="btn-back-play1">Back</button>
+        </div>
+    </div>
+
+    <!-- JOIN ROOM MENU -->
+    <div id="menu-join" class="overlay hidden">
+        <h1>Join Game</h1>
+        <div class="menu-box">
+            <label>Colab Server URL</label>
+            <input type="text" id="join-server-url" placeholder="wss://xxxx.ngrok-free.app">
+            <label>Enter 6-Digit Room Code</label>
+            <input type="number" id="join-code" placeholder="123456">
+            <button class="btn" id="btn-start-join">Connect & Play</button>
+            <button class="btn btn-secondary" id="btn-back-play2">Back</button>
+        </div>
+    </div>
+
+    <!-- SETTINGS MENU -->
+    <div id="menu-settings" class="overlay hidden">
+        <h1>Settings</h1>
+        <div class="menu-box">
+            <label>Render Distance (Chunk Size)</label>
+            <select id="setting-render">
+                <option value="32">32x32 (Low/Fast)</option>
+                <option value="48">48x48 (Medium)</option>
+                <option value="64" selected>64x64 (High/Expanded)</option>
+            </select>
+
+            <label>Look Sensitivity</label>
+            <select id="setting-sens">
+                <option value="0.003">Low</option>
+                <option value="0.005" selected>Medium</option>
+                <option value="0.008">High</option>
+            </select>
+
+            <button class="btn" id="btn-save-settings">Save & Exit</button>
+        </div>
     </div>
 
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
@@ -48,61 +133,103 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // -----------------------------------------------------------------
-        // 1. PROCEDURAL 16x16 PIXEL TEXTURE GENERATOR
-        // -----------------------------------------------------------------
-        function createPixelTexture(drawPixelArt) {
+        // --- GLOBAL CONFIG & STATE ---
+        let worldSize = 64; // Expanded terrain size
+        let cameraSens = 0.005;
+        let playerName = "Steve";
+        let roomCode = "";
+        let ws = null;
+        let otherPlayers = {};
+
+        // --- UI NAVIGATION LOGIC ---
+        const ui = {
+            main: document.getElementById('menu-main'),
+            play: document.getElementById('menu-play'),
+            host: document.getElementById('menu-host'),
+            join: document.getElementById('menu-join'),
+            settings: document.getElementById('menu-settings'),
+            tag: document.getElementById('player-tag')
+        };
+
+        const showMenu = (menu) => {
+            [ui.main, ui.play, ui.host, ui.join, ui.settings].forEach(m => m.classList.add('hidden'));
+            if(menu) menu.classList.remove('hidden');
+        };
+
+        document.getElementById('btn-play-menu').onclick = () => showMenu(ui.play);
+        document.getElementById('btn-settings-menu').onclick = () => showMenu(ui.settings);
+        document.getElementById('btn-back-main').onclick = () => showMenu(ui.main);
+        document.getElementById('btn-back-play1').onclick = () => showMenu(ui.play);
+        document.getElementById('btn-back-play2').onclick = () => showMenu(ui.play);
+
+        document.getElementById('btn-mode-host').onclick = () => {
+            roomCode = Math.floor(100000 + Math.random() * 900000).toString();
+            document.getElementById('host-code').innerText = roomCode;
+            showMenu(ui.host);
+        };
+
+        document.getElementById('btn-mode-join').onclick = () => showMenu(ui.join);
+
+        document.getElementById('btn-save-settings').onclick = () => {
+            worldSize = parseInt(document.getElementById('setting-render').value);
+            cameraSens = parseFloat(document.getElementById('setting-sens').value);
+            showMenu(ui.main);
+        };
+
+        // --- GAME START TRIGGERS ---
+        document.getElementById('btn-mode-single').onclick = () => startGame();
+        document.getElementById('btn-mode-net').onclick = () => startGame();
+
+        document.getElementById('btn-start-host').onclick = () => {
+            const url = document.getElementById('server-url').value;
+            if(url) connectWebSocket(url, roomCode, true);
+            startGame();
+        };
+
+        document.getElementById('btn-start-join').onclick = () => {
+            const url = document.getElementById('join-server-url').value;
+            const code = document.getElementById('join-code').value;
+            if(url && code) connectWebSocket(url, code, false);
+            startGame();
+        };
+
+        function startGame() {
+            playerName = document.getElementById('username').value || "Steve";
+            ui.tag.innerText = "Player: " + playerName;
+            showMenu(null); // Hide all overlays
+            initGame();
+        }
+
+        // --- PROCEDURAL TEXTURE GENERATOR ---
+        function createPixelTexture(draw) {
             const canvas = document.createElement('canvas');
-            canvas.width = 16;
-            canvas.height = 16;
+            canvas.width = 16; canvas.height = 16;
             const ctx = canvas.getContext('2d');
-            drawPixelArt(ctx);
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.magFilter = THREE.NearestFilter; // Sharp pixel rendering
-            texture.minFilter = THREE.NearestFilter;
-            return texture;
+            draw(ctx);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.magFilter = THREE.NearestFilter;
+            tex.minFilter = THREE.NearestFilter;
+            return tex;
         }
 
         const grassTopTex = createPixelTexture(ctx => {
             ctx.fillStyle = '#55a02e'; ctx.fillRect(0, 0, 16, 16);
-            for(let i=0; i<40; i++) {
-                ctx.fillStyle = Math.random() > 0.5 ? '#488b25' : '#63b236';
-                ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
-            }
+            for(let i=0; i<30; i++) { ctx.fillStyle = '#488b25'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
         });
-
         const dirtTex = createPixelTexture(ctx => {
             ctx.fillStyle = '#866043'; ctx.fillRect(0, 0, 16, 16);
-            for(let i=0; i<40; i++) {
-                ctx.fillStyle = Math.random() > 0.5 ? '#684831' : '#9c7353';
-                ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
-            }
+            for(let i=0; i<30; i++) { ctx.fillStyle = '#684831'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
         });
-
         const grassSideTex = createPixelTexture(ctx => {
-            // Dirt base
             ctx.fillStyle = '#866043'; ctx.fillRect(0, 0, 16, 16);
-            for(let i=0; i<30; i++) {
-                ctx.fillStyle = Math.random() > 0.5 ? '#684831' : '#9c7353';
-                ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
-            }
-            // Grass top strip
             ctx.fillStyle = '#55a02e'; ctx.fillRect(0, 0, 16, 4);
-            for(let x=0; x<16; x++) {
-                if(Math.random() > 0.4) ctx.fillRect(x, 4, 1, Math.floor(Math.random()*3));
-            }
         });
-
         const stoneTex = createPixelTexture(ctx => {
             ctx.fillStyle = '#737373'; ctx.fillRect(0, 0, 16, 16);
-            for(let i=0; i<40; i++) {
-                ctx.fillStyle = Math.random() > 0.5 ? '#525252' : '#8e8e8e';
-                ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
-            }
+            for(let i=0; i<30; i++) { ctx.fillStyle = '#525252'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
         });
 
-        // Block Material Definitions
-        const grassBlockMaterials = [
+        const grassMat = [
             new THREE.MeshLambertMaterial({ map: grassSideTex }),
             new THREE.MeshLambertMaterial({ map: grassSideTex }),
             new THREE.MeshLambertMaterial({ map: grassTopTex }),
@@ -110,244 +237,178 @@
             new THREE.MeshLambertMaterial({ map: grassSideTex }),
             new THREE.MeshLambertMaterial({ map: grassSideTex })
         ];
-        const dirtMaterial = new THREE.MeshLambertMaterial({ map: dirtTex });
-        const stoneMaterial = new THREE.MeshLambertMaterial({ map: stoneTex });
+        const dirtMat = new THREE.MeshLambertMaterial({ map: dirtTex });
+        const stoneMat = new THREE.MeshLambertMaterial({ map: stoneTex });
 
-        // -----------------------------------------------------------------
-        // 2. SCENE & CAMERA SETUP
-        // -----------------------------------------------------------------
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0x87CEEB, 15, 45);
-
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.rotation.order = "YXZ"; 
-
-        const renderer = new THREE.WebGLRenderer({ antialias: false });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        document.body.appendChild(renderer.domElement);
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-        const sun = new THREE.DirectionalLight(0xffffff, 0.8);
-        sun.position.set(20, 50, 20);
-        scene.add(sun);
-
-        // -----------------------------------------------------------------
-        // 3. NOISE ENGINE & TERRAIN GENERATION
-        // -----------------------------------------------------------------
+        // --- THREE.JS ENGINE ---
+        let scene, camera, renderer;
         function getTerrainHeight(x, z) {
-            // Multi-octave Sine Noise algorithm for organic hills
-            let h = Math.sin(x * 0.08) * Math.cos(z * 0.08) * 4;
-            h += Math.sin(x * 0.03 + z * 0.03) * 6;
-            h += Math.cos(x * 0.15 - z * 0.15) * 2;
-            return Math.floor(h) + 6; // Base ground height
+            let h = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 6;
+            h += Math.sin(x * 0.02 + z * 0.02) * 8;
+            return Math.floor(h) + 8;
         }
 
-        const worldSize = 32;
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const matrix = new THREE.Matrix4();
+        function initGame() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.Fog(0x87CEEB, worldSize * 0.4, worldSize * 0.8);
 
-        // Calculate maximum blocks needed
-        let grassCount = worldSize * worldSize;
-        let dirtCount = worldSize * worldSize * 3;
-        let stoneCount = worldSize * worldSize * 8;
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 150);
+            camera.rotation.order = "YXZ";
 
-        const grassMesh = new THREE.InstancedMesh(geometry, grassBlockMaterials, grassCount);
-        const dirtMesh = new THREE.InstancedMesh(geometry, dirtMaterial, dirtCount);
-        const stoneMesh = new THREE.InstancedMesh(geometry, stoneMaterial, stoneCount);
+            renderer = new THREE.WebGLRenderer({ antialias: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
 
-        let gIdx = 0, dIdx = 0, sIdx = 0;
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+            sun.position.set(30, 60, 30);
+            scene.add(sun);
 
-        for (let x = 0; x < worldSize; x++) {
-            for (let z = 0; z < worldSize; z++) {
-                const worldX = x - worldSize / 2;
-                const worldZ = z - worldSize / 2;
-                const surfaceY = getTerrainHeight(worldX, worldZ);
+            // Terrain Instancing
+            const geom = new THREE.BoxGeometry(1, 1, 1);
+            const matrix = new THREE.Matrix4();
 
-                // Top layer: Grass
-                matrix.setPosition(worldX, surfaceY, worldZ);
-                grassMesh.setMatrixAt(gIdx++, matrix);
+            const grassMesh = new THREE.InstancedMesh(geom, grassMat, worldSize * worldSize);
+            const dirtMesh = new THREE.InstancedMesh(geom, dirtMat, worldSize * worldSize * 3);
+            const stoneMesh = new THREE.InstancedMesh(geom, stoneMat, worldSize * worldSize * 6);
 
-                // Middle layers: Dirt
-                for (let y = surfaceY - 1; y >= surfaceY - 3; y--) {
-                    matrix.setPosition(worldX, y, worldZ);
-                    dirtMesh.setMatrixAt(dIdx++, matrix);
-                }
+            let gIdx = 0, dIdx = 0, sIdx = 0;
+            for (let x = 0; x < worldSize; x++) {
+                for (let z = 0; z < worldSize; z++) {
+                    const wx = x - worldSize / 2;
+                    const wz = z - worldSize / 2;
+                    const sy = getTerrainHeight(wx, wz);
 
-                // Deep layers: Stone
-                for (let y = surfaceY - 4; y >= 0; y--) {
-                    matrix.setPosition(worldX, y, worldZ);
-                    stoneMesh.setMatrixAt(sIdx++, matrix);
+                    matrix.setPosition(wx, sy, wz); grassMesh.setMatrixAt(gIdx++, matrix);
+                    for (let y = sy - 1; y >= sy - 2; y--) { matrix.setPosition(wx, y, wz); dirtMesh.setMatrixAt(dIdx++, matrix); }
+                    for (let y = sy - 3; y >= 0; y--) { matrix.setPosition(wx, y, wz); stoneMesh.setMatrixAt(sIdx++, matrix); }
                 }
             }
+            scene.add(grassMesh); scene.add(dirtMesh); scene.add(stoneMesh);
+
+            camera.position.set(0, getTerrainHeight(0, 0) + 3, 0);
+
+            setupControls();
+            animate();
         }
 
-        scene.add(grassMesh);
-        scene.add(dirtMesh);
-        scene.add(stoneMesh);
-
-        // Spawn player above highest block at map center
-        const spawnY = getTerrainHeight(0, 0) + 3;
-        camera.position.set(0, spawnY, 0);
-
-        // -----------------------------------------------------------------
-        // 4. TOUCH CONTROLS (JOYSTICK & LOOK ENGINE)
-        // -----------------------------------------------------------------
-        let moveX = 0, moveZ = 0;
-        let isJumping = false;
-
-        // Joystick Logic
-        const base = document.getElementById('joystick-base');
-        const knob = document.getElementById('joystick-knob');
-        let joyTouchId = null;
-        let baseCenter = { x: 0, y: 0 };
-
-        base.addEventListener('touchstart', (e) => {
-            const touch = e.changedTouches[0];
-            joyTouchId = touch.identifier;
-            const rect = base.getBoundingClientRect();
-            baseCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-            updateJoystick(touch);
-        }, { passive: false });
-
-        window.addEventListener('touchmove', (e) => {
-            for (let touch of e.changedTouches) {
-                if (touch.identifier === joyTouchId) updateJoystick(touch);
-            }
-        }, { passive: false });
-
-        const resetJoystick = (e) => {
-            for (let touch of e.changedTouches) {
-                if (touch.identifier === joyTouchId) {
-                    joyTouchId = null;
-                    moveX = 0; moveZ = 0;
-                    knob.style.transform = `translate(0px, 0px)`;
-                }
-            }
-        };
-        window.addEventListener('touchend', resetJoystick);
-        window.addEventListener('touchcancel', resetJoystick);
-
-        function updateJoystick(touch) {
-            const maxRadius = 40;
-            let dx = touch.clientX - baseCenter.x;
-            let dy = touch.clientY - baseCenter.y;
-            const dist = Math.hypot(dx, dy);
-
-            if (dist > maxRadius) {
-                dx = (dx / dist) * maxRadius;
-                dy = (dy / dist) * maxRadius;
-            }
-
-            knob.style.transform = `translate(${dx}px, ${dy}px)`;
-            moveX = dx / maxRadius;  // Output range -1.0 to 1.0
-            moveZ = dy / maxRadius;
-        }
-
-        // Jump Button
-        const jumpBtn = document.getElementById('btn-jump');
-        jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isJumping = true; });
-        jumpBtn.addEventListener('touchend', () => isJumping = false);
-
-        // Camera Drag Look Logic
-        const lookZone = document.getElementById('look-zone');
-        let lookTouchId = null;
-        let lastTouchX = 0, lastTouchY = 0;
+        // --- CONTROLS & PHYSICS ---
+        let moveX = 0, moveZ = 0, isJumping = false;
         let yaw = 0, pitch = 0;
 
-        lookZone.addEventListener('touchstart', (e) => {
-            const touch = e.changedTouches[0];
-            lookTouchId = touch.identifier;
-            lastTouchX = touch.clientX;
-            lastTouchY = touch.clientY;
-        });
+        function setupControls() {
+            const base = document.getElementById('joystick-base');
+            const knob = document.getElementById('joystick-knob');
+            let joyId = null, center = { x: 0, y: 0 };
 
-        window.addEventListener('touchmove', (e) => {
-            for (let touch of e.changedTouches) {
-                if (touch.identifier === lookTouchId) {
-                    const dx = touch.clientX - lastTouchX;
-                    const dy = touch.clientY - lastTouchY;
+            base.ontouchstart = (e) => {
+                const t = e.changedTouches[0];
+                joyId = t.identifier;
+                const r = base.getBoundingClientRect();
+                center = { x: r.left + r.width/2, y: r.top + r.height/2 };
+            };
 
-                    yaw -= dx * 0.005;
-                    pitch -= dy * 0.005;
-                    pitch = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, pitch));
-
-                    camera.rotation.y = yaw;
-                    camera.rotation.x = pitch;
-
-                    lastTouchX = touch.clientX;
-                    lastTouchY = touch.clientY;
+            window.ontouchmove = (e) => {
+                for(let t of e.changedTouches) {
+                    if(t.identifier === joyId) {
+                        let dx = t.clientX - center.x, dy = t.clientY - center.y;
+                        const dist = Math.hypot(dx, dy);
+                        if(dist > 40) { dx = (dx/dist)*40; dy = (dy/dist)*40; }
+                        knob.style.transform = `translate(${dx}px, ${dy}px)`;
+                        moveX = dx / 40; moveZ = dy / 40;
+                    }
                 }
-            }
-        });
+            };
 
-        const resetLook = (e) => {
-            for (let touch of e.changedTouches) {
-                if (touch.identifier === lookTouchId) lookTouchId = null;
-            }
-        };
-        window.addEventListener('touchend', resetLook);
+            const resetJoy = (e) => {
+                for(let t of e.changedTouches) {
+                    if(t.identifier === joyId) { joyId = null; moveX = 0; moveZ = 0; knob.style.transform = 'translate(0,0)'; }
+                }
+            };
+            window.ontouchend = resetJoy;
 
-        // -----------------------------------------------------------------
-        // 5. PHYSICS ENGINE & GAME LOOP
-        // -----------------------------------------------------------------
-        const velocity = new THREE.Vector3();
-        let prevTime = performance.now();
-        let canJump = false;
+            document.getElementById('btn-jump').ontouchstart = (e) => { e.preventDefault(); isJumping = true; };
+            document.getElementById('btn-jump').ontouchend = () => isJumping = false;
+
+            // Camera Look Drag
+            const look = document.getElementById('look-zone');
+            let lookId = null, lx = 0, ly = 0;
+            look.ontouchstart = (e) => { const t = e.changedTouches[0]; lookId = t.identifier; lx = t.clientX; ly = t.clientY; };
+            window.ontouchmove = (e) => {
+                for(let t of e.changedTouches) {
+                    if(t.identifier === lookId) {
+                        yaw -= (t.clientX - lx) * cameraSens;
+                        pitch -= (t.clientY - ly) * cameraSens;
+                        pitch = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, pitch));
+                        camera.rotation.y = yaw; camera.rotation.x = pitch;
+                        lx = t.clientX; ly = t.clientY;
+                    }
+                }
+            };
+            window.ontouchend = (e) => { for(let t of e.changedTouches) if(t.identifier === lookId) lookId = null; };
+        }
+
+        // --- WEBSOCKET MULTIPLAYER ---
+        function connectWebSocket(url, code, isHost) {
+            try {
+                ws = new WebSocket(url);
+                ws.onopen = () => {
+                    ws.send(JSON.stringify({ type: 'join', code: code, name: playerName }));
+                };
+                ws.onmessage = (msg) => {
+                    const data = JSON.parse(msg.data);
+                    if(data.type === 'player_move') updateRemotePlayer(data);
+                };
+            } catch(e) { console.log("WS Error: ", e); }
+        }
+
+        function updateRemotePlayer(data) {
+            if(!otherPlayers[data.id]) {
+                const geom = new THREE.BoxGeometry(0.8, 1.8, 0.8);
+                const mat = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+                const mesh = new THREE.Mesh(geom, mat);
+                scene.add(mesh);
+                otherPlayers[data.id] = mesh;
+            }
+            otherPlayers[data.id].position.set(data.x, data.y, data.z);
+        }
+
+        // --- GAME LOOP ---
+        const vel = new THREE.Vector3();
+        let prevTime = performance.now(), canJump = false;
 
         function animate() {
             requestAnimationFrame(animate);
             const time = performance.now();
             const delta = Math.min((time - prevTime) / 1000, 0.1);
 
-            // Apply friction & gravity
-            velocity.x -= velocity.x * 10.0 * delta;
-            velocity.z -= velocity.z * 10.0 * delta;
-            velocity.y -= 9.8 * 5.0 * delta;
+            vel.x -= vel.x * 10.0 * delta; vel.z -= vel.z * 10.0 * delta; vel.y -= 9.8 * 5.0 * delta;
 
-            // Camera movement relative to look direction
             const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
             const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
 
-            // Apply joystick vector
-            if (moveZ !== 0) {
-                velocity.x -= forward.x * moveZ * 35.0 * delta;
-                velocity.z -= forward.z * moveZ * 35.0 * delta;
-            }
-            if (moveX !== 0) {
-                velocity.x += right.x * moveX * 35.0 * delta;
-                velocity.z += right.z * moveX * 35.0 * delta;
-            }
+            if (moveZ !== 0) { vel.x -= forward.x * moveZ * 35.0 * delta; vel.z -= forward.z * moveZ * 35.0 * delta; }
+            if (moveX !== 0) { vel.x += right.x * moveX * 35.0 * delta; vel.z += right.z * moveX * 35.0 * delta; }
 
-            camera.position.x += velocity.x * delta;
-            camera.position.z += velocity.z * delta;
-            camera.position.y += velocity.y * delta;
+            camera.position.x += vel.x * delta; camera.position.z += vel.z * delta; camera.position.y += vel.y * delta;
 
-            // Ground Collision based on Noise Heightmap
-            const currentTerrainY = getTerrainHeight(camera.position.x, camera.position.z) + 2.5;
-            if (camera.position.y < currentTerrainY) {
-                velocity.y = 0;
-                camera.position.y = currentTerrainY;
-                canJump = true;
-            }
+            const groundY = getTerrainHeight(camera.position.x, camera.position.z) + 2.5;
+            if (camera.position.y < groundY) { vel.y = 0; camera.position.y = groundY; canJump = true; }
+            if (isJumping && canJump) { vel.y = 14; canJump = false; }
 
-            if (isJumping && canJump) {
-                velocity.y = 14;
-                canJump = false;
+            // Sync Network Position
+            if(ws && ws.readyState === WebSocket.OPEN && Math.random() < 0.2) {
+                ws.send(JSON.stringify({
+                    type: 'move', code: roomCode,
+                    x: camera.position.x, y: camera.position.y, z: camera.position.z
+                }));
             }
 
             prevTime = time;
             renderer.render(scene, camera);
         }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        animate();
     </script>
 </body>
 </html>
