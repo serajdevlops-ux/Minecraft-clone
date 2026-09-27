@@ -5,34 +5,180 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>VibeCraft Mobile</title>
     <style>
-        * { touch-action: none; user-select: none; -webkit-user-select: none; box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #111; font-family: 'Segoe UI', sans-serif; }
+        * { 
+            touch-action: none; 
+            user-select: none; 
+            -webkit-user-select: none; 
+            box-sizing: border-box; 
+        }
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: #111; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
         
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(18, 18, 24, 0.94); color: white; z-index: 100; padding: 20px; }
+        /* UI OVERLAY MENUS */
+        .overlay { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            background: rgba(18, 18, 24, 0.94); 
+            color: white; 
+            z-index: 100; 
+            padding: 20px; 
+        }
         .hidden { display: none !important; }
         
-        h1 { font-size: 36px; margin-bottom: 20px; color: #55a02e; text-shadow: 2px 2px #000; text-transform: uppercase; letter-spacing: 2px; }
-        .menu-box { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
+        h1 { 
+            font-size: 36px; 
+            margin-bottom: 20px; 
+            color: #55a02e; 
+            text-shadow: 2px 2px #000; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+        }
+        .menu-box { 
+            width: 100%; 
+            max-width: 320px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+        }
         
         label { font-size: 14px; color: #aaa; margin-bottom: -6px; }
-        input[type="text"], input[type="number"], select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #333; background: #222; color: #fff; font-size: 16px; outline: none; text-align: center; }
+        input[type="text"], input[type="number"], select { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 8px; 
+            border: 2px solid #333; 
+            background: #222; 
+            color: #fff; 
+            font-size: 16px; 
+            outline: none; 
+            text-align: center; 
+        }
+        input[type="text"]:focus, select:focus { border-color: #55a02e; }
         
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: #55a02e; color: white; font-size: 16px; font-weight: bold; cursor: pointer; text-shadow: 1px 1px #000; box-shadow: 0 4px #3b731f; }
+        .btn { 
+            width: 100%; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 8px; 
+            background: #55a02e; 
+            color: white; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            text-shadow: 1px 1px #000; 
+            box-shadow: 0 4px #3b731f; 
+        }
         .btn:active { transform: translateY(3px); box-shadow: 0 1px #3b731f; }
         .btn-secondary { background: #444; box-shadow: 0 4px #222; }
 
-        .code-display { font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #ffca28; background: #222; padding: 12px; border-radius: 8px; text-align: center; border: 2px dashed #ffca28; margin: 10px 0; }
+        .code-display { 
+            font-size: 32px; 
+            font-weight: bold; 
+            letter-spacing: 6px; 
+            color: #ffca28; 
+            background: #222; 
+            padding: 12px; 
+            border-radius: 8px; 
+            text-align: center; 
+            border: 2px dashed #ffca28; 
+            margin: 10px 0; 
+        }
         .status-msg { font-size: 14px; color: #4caf50; text-align: center; min-height: 20px; }
 
-        #crosshair { position: absolute; top: 40%; left: 50%; width: 8px; height: 8px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; }
-        #look-zone { position: absolute; top: 0; left: 0; width: 100%; height: 70%; z-index: 5; }
-        #controls-zone { position: absolute; bottom: 0; left: 0; width: 100%; height: 30%; z-index: 10; pointer-events: none; }
+        /* HUD & TOUCH CONTROLS */
+        #crosshair { 
+            position: absolute; 
+            top: 40%; 
+            left: 50%; 
+            width: 8px; 
+            height: 8px; 
+            background: rgba(255,255,255,0.8); 
+            border-radius: 50%; 
+            transform: translate(-50%, -50%); 
+            pointer-events: none; 
+            z-index: 10; 
+        }
+        #look-zone { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 70%; 
+            z-index: 5; 
+        }
+        #controls-zone { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 30%; 
+            z-index: 10; 
+            pointer-events: none; 
+        }
         
-        #joystick-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 50%; pointer-events: auto; }
-        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255, 255, 255, 0.7); border-radius: 50%; }
-        #btn-jump { position: absolute; bottom: 50px; right: 40px; width: 80px; height: 80px; background: rgba(255, 255, 255, 0.3); border: 2px solid white; border-radius: 50%; color: white; font-weight: bold; font-size: 28px; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
+        #joystick-base { 
+            position: absolute; 
+            bottom: 40px; 
+            left: 40px; 
+            width: 120px; 
+            height: 120px; 
+            background: rgba(255, 255, 255, 0.2); 
+            border: 2px solid rgba(255, 255, 255, 0.5); 
+            border-radius: 50%; 
+            pointer-events: auto; 
+        }
+        #joystick-knob { 
+            position: absolute; 
+            top: 35px; 
+            left: 35px; 
+            width: 50px; 
+            height: 50px; 
+            background: rgba(255, 255, 255, 0.7); 
+            border-radius: 50%; 
+        }
+        #btn-jump { 
+            position: absolute; 
+            bottom: 50px; 
+            right: 40px; 
+            width: 80px; 
+            height: 80px; 
+            background: rgba(255, 255, 255, 0.3); 
+            border: 2px solid white; 
+            border-radius: 50%; 
+            color: white; 
+            font-weight: bold; 
+            font-size: 28px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            pointer-events: auto; 
+        }
         
-        #player-tag { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; z-index: 10; }
+        #player-tag { 
+            position: absolute; 
+            top: 15px; 
+            left: 15px; 
+            background: rgba(0,0,0,0.6); 
+            color: white; 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 14px; 
+            z-index: 10; 
+        }
     </style>
 </head>
 <body>
@@ -63,8 +209,8 @@
         <h1>Select Mode</h1>
         <div class="menu-box">
             <button class="btn" id="btn-mode-single">Single Player</button>
-            <button class="btn" id="btn-mode-host">Host Game (Colab)</button>
-            <button class="btn" id="btn-mode-join">Join Game (Code)</button>
+            <button class="btn" id="btn-mode-host">Host Game</button>
+            <button class="btn" id="btn-mode-join">Join Game</button>
             <button class="btn btn-secondary" id="btn-back-main">Back</button>
         </div>
     </div>
@@ -73,9 +219,9 @@
     <div id="menu-host" class="overlay hidden">
         <h1>Hosting Game</h1>
         <div class="menu-box">
-            <label>Your Room Code:</label>
+            <label>Give this 6-Digit Code to your friend:</label>
             <div id="host-code" class="code-display">------</div>
-            <div id="host-status" class="status-msg">Auto-detecting Colab Server...</div>
+            <div id="host-status" class="status-msg">Connecting to Hugging Face Server...</div>
             <button class="btn" id="btn-start-host">Start & Play</button>
             <button class="btn btn-secondary" id="btn-back-play1">Back</button>
         </div>
@@ -85,7 +231,7 @@
     <div id="menu-join" class="overlay hidden">
         <h1>Join Game</h1>
         <div class="menu-box">
-            <label>Enter 6-Digit Room Code</label>
+            <label>Enter Friend's 6-Digit Code</label>
             <input type="number" id="join-code" placeholder="123456">
             <div id="join-status" class="status-msg" style="color:#ff9800;"></div>
             <button class="btn" id="btn-start-join">Connect & Play</button>
@@ -103,6 +249,14 @@
                 <option value="48">48x48 (Medium)</option>
                 <option value="64" selected>64x64 (High)</option>
             </select>
+
+            <label>Look Sensitivity</label>
+            <select id="setting-sens">
+                <option value="0.003">Low</option>
+                <option value="0.005" selected>Medium</option>
+                <option value="0.008">High</option>
+            </select>
+
             <button class="btn" id="btn-save-settings">Save</button>
         </div>
     </div>
@@ -119,10 +273,17 @@
     <script type="module">
         import * as THREE from 'three';
 
-        let worldSize = 64, cameraSens = 0.005;
-        let playerName = "Steve", roomCode = "", ws = null;
+        // --- FIXED SERVER CONFIGURATION ---
+        const HF_SERVER_URL = "wss://seraj-develops-minecraft-server.static.hf.space";
+
+        let worldSize = 64;
+        let cameraSens = 0.005;
+        let playerName = "Steve";
+        let roomCode = "";
+        let ws = null;
         let otherPlayers = {};
 
+        // --- UI NAVIGATION ---
         const ui = {
             main: document.getElementById('menu-main'),
             play: document.getElementById('menu-play'),
@@ -143,50 +304,64 @@
         document.getElementById('btn-back-play1').onclick = () => showMenu(ui.play);
         document.getElementById('btn-back-play2').onclick = () => showMenu(ui.play);
 
-        // AUTO-PULL COLAB SERVER URL
-        async function fetchAutoColabUrl() {
-            try {
-                const res = await fetch('https://jsonblob.com/api/jsonBlob/vibecraft-auto-server');
-                const data = await res.json();
-                if(data && data.server_url) return data.server_url;
-            } catch(e) { console.error("Auto-pull error:", e); }
-            return null;
-        }
-
-        document.getElementById('btn-mode-host').onclick = async () => {
+        // --- HOSTING MODE ---
+        document.getElementById('btn-mode-host').onclick = () => {
             roomCode = Math.floor(100000 + Math.random() * 900000).toString();
             document.getElementById('host-code').innerText = roomCode;
             showMenu(ui.host);
 
-            const serverUrl = await fetchAutoColabUrl();
-            if(serverUrl) {
-                document.getElementById('host-status').innerText = "✅ Colab Server Connected!";
-                connectWebSocket(serverUrl, roomCode);
-            } else {
-                document.getElementById('host-status').innerText = "⚠️ Colab Server not running!";
-            }
+            document.getElementById('host-status').innerText = "Connecting to 24/7 Server...";
+            connectWebSocket(HF_SERVER_URL, roomCode, () => {
+                document.getElementById('host-status').innerText = "✅ Connected to Server!";
+            });
         };
 
+        // --- JOINING MODE ---
         document.getElementById('btn-mode-join').onclick = () => showMenu(ui.join);
 
-        document.getElementById('btn-start-join').onclick = async () => {
+        document.getElementById('btn-start-join').onclick = () => {
             const code = document.getElementById('join-code').value;
-            if(!code || code.length !== 6) return;
-            
-            document.getElementById('join-status').innerText = "Finding Colab Server...";
-            const serverUrl = await fetchAutoColabUrl();
-            
-            if(serverUrl) {
-                connectWebSocket(serverUrl, code);
-                startGame();
-            } else {
-                document.getElementById('join-status').innerText = "Colab Server offline!";
+            if(!code || code.length !== 6) {
+                document.getElementById('join-status').innerText = "Enter a valid 6-digit code!";
+                return;
             }
+            
+            document.getElementById('join-status').innerText = "Connecting to Server...";
+            connectWebSocket(HF_SERVER_URL, code, () => {
+                startGame();
+            });
         };
 
         document.getElementById('btn-mode-single').onclick = () => startGame();
         document.getElementById('btn-start-host').onclick = () => startGame();
-        document.getElementById('btn-save-settings').onclick = () => showMenu(ui.main);
+
+        document.getElementById('btn-save-settings').onclick = () => {
+            worldSize = parseInt(document.getElementById('setting-render').value);
+            cameraSens = parseFloat(document.getElementById('setting-sens').value);
+            showMenu(ui.main);
+        };
+
+        function connectWebSocket(url, code, onConnect) {
+            try {
+                ws = new WebSocket(url);
+                ws.onopen = () => {
+                    ws.send(JSON.stringify({ type: 'join', code: code, name: playerName }));
+                    if(onConnect) onConnect();
+                };
+                ws.onmessage = (msg) => {
+                    const data = JSON.parse(msg.data);
+                    if(data.type === 'player_move') updateRemotePlayer(data);
+                };
+                ws.onerror = (err) => {
+                    console.error("WebSocket Error:", err);
+                    if(document.getElementById('join-status')) {
+                        document.getElementById('join-status').innerText = "Server Connection Failed!";
+                    }
+                };
+            } catch(e) { 
+                console.error("WS Initialization Error:", e); 
+            }
+        }
 
         function startGame() {
             playerName = document.getElementById('username').value || "Steve";
@@ -195,6 +370,7 @@
             initGame();
         }
 
+        // --- PROCEDURAL PIXEL TEXTURES ---
         function createPixelTexture(draw) {
             const canvas = document.createElement('canvas');
             canvas.width = 16; canvas.height = 16;
@@ -234,7 +410,9 @@
         const dirtMat = new THREE.MeshLambertMaterial({ map: dirtTex });
         const stoneMat = new THREE.MeshLambertMaterial({ map: stoneTex });
 
+        // --- THREE.JS GRAPHICS ---
         let scene, camera, renderer;
+
         function getTerrainHeight(x, z) {
             let h = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 6;
             h += Math.sin(x * 0.02 + z * 0.02) * 8;
@@ -259,6 +437,7 @@
             sun.position.set(30, 60, 30);
             scene.add(sun);
 
+            // Terrain Generation via Instanced Mesh
             const geom = new THREE.BoxGeometry(1, 1, 1);
             const matrix = new THREE.Matrix4();
 
@@ -286,6 +465,7 @@
             animate();
         }
 
+        // --- TOUCH CONTROLS ---
         let moveX = 0, moveZ = 0, isJumping = false;
         let yaw = 0, pitch = 0;
 
@@ -340,17 +520,7 @@
             window.ontouchend = (e) => { for(let t of e.changedTouches) if(t.identifier === lookId) lookId = null; };
         }
 
-        function connectWebSocket(url, code) {
-            try {
-                ws = new WebSocket(url);
-                ws.onopen = () => ws.send(JSON.stringify({ type: 'join', code: code, name: playerName }));
-                ws.onmessage = (msg) => {
-                    const data = JSON.parse(msg.data);
-                    if(data.type === 'player_move') updateRemotePlayer(data);
-                };
-            } catch(e) { console.error("WS Error:", e); }
-        }
-
+        // --- REALTIME MULTIPLAYER SYNC ---
         function updateRemotePlayer(data) {
             if(!otherPlayers[data.id]) {
                 const geom = new THREE.BoxGeometry(0.8, 1.8, 0.8);
@@ -362,6 +532,7 @@
             otherPlayers[data.id].position.set(data.x, data.y, data.z);
         }
 
+        // --- GAME LOOP & PHYSICS ---
         const vel = new THREE.Vector3();
         let prevTime = performance.now(), canJump = false;
 
@@ -384,6 +555,7 @@
             if (camera.position.y < groundY) { vel.y = 0; camera.position.y = groundY; canJump = true; }
             if (isJumping && canJump) { vel.y = 14; canJump = false; }
 
+            // Sync position to Hugging Face server
             if(ws && ws.readyState === WebSocket.OPEN && Math.random() < 0.2) {
                 ws.send(JSON.stringify({
                     type: 'move', code: roomCode,
