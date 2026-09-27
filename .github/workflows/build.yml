@@ -2,7 +2,6 @@ name: Build Minecraft APK
 
 on:
   push:
-    # Trigger on both main and master just in case
     branches: [ "main", "master" ] 
 
 jobs:
@@ -16,33 +15,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17' # Required by Capacitor 6
+          java-version: '17'
 
       - name: Prepare Files & Capacitor
         run: |
           npm init -y
-          # Force the latest stable Capacitor versions
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           
-          # Create the web folder
           mkdir -p www
           
-          # Safely copy index.html (Even if it is named Index.html or INDEX.HTML)
           if ls | grep -iq '^index\.html$'; then
             cp -f $(ls | grep -i '^index\.html$') www/index.html
           else
             echo "ERROR: index.html not found in the repository root!"
-            echo "Did you put it in a folder?"
             exit 1
           fi
           
-          # Initialize Capacitor
           npx cap init VibeCraft com.vibe.minecraft --web-dir www
           npx cap add android
           
@@ -50,7 +44,6 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          # Added --stacktrace so if it fails, the logs tell us exactly why
           ./gradlew assembleDebug --stacktrace
           
       - name: Upload APK Artifact
