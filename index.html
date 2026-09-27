@@ -2,40 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>VibeCraft</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile VibeCraft</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; }
-        #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); color: white; cursor: pointer; z-index: 10; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; transform: translate(-50%, -50%); pointer-events: none; }
-        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.8); }
-        #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
-        #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; }
+        
+        /* Mobile UI Overlay */
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; }
+        
+        .touch-btn { position: absolute; background: rgba(255, 255, 255, 0.3); border: 2px solid white; border-radius: 10px; color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 20; }
+        .touch-btn:active { background: rgba(255, 255, 255, 0.6); }
+
+        /* D-Pad positioning */
+        #btn-w { bottom: 120px; left: 80px; width: 60px; height: 60px; }
+        #btn-s { bottom: 40px; left: 80px; width: 60px; height: 60px; }
+        #btn-a { bottom: 40px; left: 10px; width: 60px; height: 60px; }
+        #btn-d { bottom: 40px; left: 150px; width: 60px; height: 60px; }
+        
+        /* Jump button */
+        #btn-jump { bottom: 50px; right: 30px; width: 80px; height: 80px; border-radius: 50%; }
     </style>
 </head>
 <body>
-    <div id="ui">
-        <h1>VibeCraft</h1>
-        <p>Click to Start (WASD to Move, SPACE to Jump, Mouse to Look)</p>
-    </div>
     <div id="crosshair"></div>
 
-    <!-- Import maps polyfill -->
-    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <!-- On-screen Controls -->
+    <div id="btn-w" class="touch-btn">W</div>
+    <div id="btn-a" class="touch-btn">A</div>
+    <div id="btn-s" class="touch-btn">S</div>
+    <div id="btn-d" class="touch-btn">D</div>
+    <div id="btn-jump" class="touch-btn">^</div>
 
-    <!-- Import Three.js -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
         }
       }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
-        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
         // 1. Scene Setup
         const scene = new THREE.Scene();
@@ -43,8 +51,9 @@
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.position.set(0, 5, 0);
+        // Set rotation order so looking up/down doesn't tilt the camera sideways
+        camera.rotation.order = "YXZ"; 
 
-        // Turn off antialiasing to maximize FPS on integrated graphics
         const renderer = new THREE.WebGLRenderer({ antialias: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
@@ -55,23 +64,18 @@
         sun.position.set(20, 50, 20);
         scene.add(sun);
 
-        // 3. Terrain Generation (Using InstancedMesh for performance)
-        const worldSize = 32; // 32x32 chunk
+        // 3. Terrain Generation (Optimized)
+        const worldSize = 32;
         const geometry = new THREE.BoxGeometry(1, 1, 1);
-        
-        // Block Materials (Grass top, Dirt sides/bottom)
         const dirt = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
         const grass = new THREE.MeshLambertMaterial({ color: 0x3cb371 });
         const materials = [dirt, dirt, grass, dirt, dirt, dirt]; 
 
-        const totalBlocks = worldSize * worldSize;
-        const instancedMesh = new THREE.InstancedMesh(geometry, materials, totalBlocks);
-        
+        const instancedMesh = new THREE.InstancedMesh(geometry, materials, worldSize * worldSize);
         const matrix = new THREE.Matrix4();
         let i = 0;
         for (let x = 0; x < worldSize; x++) {
             for (let z = 0; z < worldSize; z++) {
-                // Generate slight height variation
                 let y = Math.floor(Math.random() * 2); 
                 matrix.setPosition(x - worldSize/2, y, z - worldSize/2);
                 instancedMesh.setMatrixAt(i, matrix);
@@ -80,71 +84,99 @@
         }
         scene.add(instancedMesh);
 
-        // 4. Player Controls (Keyboard & Mouse)
-        const controls = new PointerLockControls(camera, document.body);
-        const ui = document.getElementById('ui');
-
-        ui.addEventListener('click', () => controls.lock());
-        controls.addEventListener('lock', () => ui.style.display = 'none');
-        controls.addEventListener('unlock', () => ui.style.display = 'flex');
-        scene.add(controls.getObject());
-
+        // 4. Mobile Touch Controls
         const keys = { w: false, a: false, s: false, d: false, space: false };
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyW') keys.w = true;
-            if (e.code === 'KeyA') keys.a = true;
-            if (e.code === 'KeyS') keys.s = true;
-            if (e.code === 'KeyD') keys.d = true;
-            if (e.code === 'Space') keys.space = true;
-        });
-        document.addEventListener('keyup', (e) => {
-            if (e.code === 'KeyW') keys.w = false;
-            if (e.code === 'KeyA') keys.a = false;
-            if (e.code === 'KeyS') keys.s = false;
-            if (e.code === 'KeyD') keys.d = false;
-            if (e.code === 'Space') keys.space = false;
-        });
+        
+        // Bind UI buttons
+        const bindBtn = (id, key) => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+            btn.addEventListener('touchcancel', (e) => { e.preventDefault(); keys[key] = false; });
+        };
+        bindBtn('btn-w', 'w');
+        bindBtn('btn-a', 'a');
+        bindBtn('btn-s', 's');
+        bindBtn('btn-d', 'd');
+        bindBtn('btn-jump', 'space');
+
+        // Touch to Look around
+        let touchX = 0, touchY = 0;
+        let yaw = 0, pitch = 0;
+        let isDragging = false;
+
+        document.body.addEventListener('touchstart', (e) => {
+            if (e.target.className === 'touch-btn') return; // Ignore if touching a button
+            isDragging = true;
+            touchX = e.touches[0].pageX;
+            touchY = e.touches[0].pageY;
+        }, { passive: false });
+
+        document.body.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const currentX = e.touches[0].pageX;
+            const currentY = e.touches[0].pageY;
+            
+            const deltaX = currentX - touchX;
+            const deltaY = currentY - touchY;
+
+            yaw -= deltaX * 0.005;
+            pitch -= deltaY * 0.005;
+            
+            // Clamp looking straight up or down
+            pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch)); 
+
+            camera.rotation.y = yaw;
+            camera.rotation.x = pitch;
+
+            touchX = currentX;
+            touchY = currentY;
+        }, { passive: false });
+
+        document.body.addEventListener('touchend', () => isDragging = false);
 
         // 5. Physics and Game Loop
         const velocity = new THREE.Vector3();
-        const direction = new THREE.Vector3();
         let prevTime = performance.now();
         let canJump = false;
 
         function animate() {
             requestAnimationFrame(animate);
             const time = performance.now();
+            const delta = Math.min((time - prevTime) / 1000, 0.1); // Cap delta to prevent lag spikes from breaking physics
 
-            if (controls.isLocked) {
-                const delta = (time - prevTime) / 1000;
+            // Friction & Gravity
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+            velocity.y -= 9.8 * 5.0 * delta;
 
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 9.8 * 5.0 * delta; // Gravity
+            // Calculate movement direction based on camera yaw
+            const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+            const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
 
-                direction.z = Number(keys.w) - Number(keys.s);
-                direction.x = Number(keys.d) - Number(keys.a);
-                direction.normalize();
+            if (keys.w) { velocity.x += forward.x * 40.0 * delta; velocity.z += forward.z * 40.0 * delta; }
+            if (keys.s) { velocity.x -= forward.x * 40.0 * delta; velocity.z -= forward.z * 40.0 * delta; }
+            if (keys.a) { velocity.x -= right.x * 40.0 * delta; velocity.z -= right.z * 40.0 * delta; }
+            if (keys.d) { velocity.x += right.x * 40.0 * delta; velocity.z += right.z * 40.0 * delta; }
 
-                if (keys.w || keys.s) velocity.z -= direction.z * 40.0 * delta;
-                if (keys.a || keys.d) velocity.x -= direction.x * 40.0 * delta;
+            // Apply velocity
+            camera.position.x += velocity.x * delta;
+            camera.position.z += velocity.z * delta;
+            camera.position.y += velocity.y * delta;
 
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
-                controls.getObject().position.y += velocity.y * delta;
-
-                // Basic Floor Collision
-                if (controls.getObject().position.y < 3) {
-                    velocity.y = 0;
-                    controls.getObject().position.y = 3;
-                    canJump = true;
-                }
-
-                if (keys.space && canJump) {
-                    velocity.y = 15; // Jump strength
-                    canJump = false;
-                }
+            // Simple floor collision (Player height = 3)
+            if (camera.position.y < 3) {
+                velocity.y = 0;
+                camera.position.y = 3;
+                canJump = true;
             }
+
+            if (keys.space && canJump) {
+                velocity.y = 15;
+                canJump = false;
+            }
+
             prevTime = time;
             renderer.render(scene, camera);
         }
