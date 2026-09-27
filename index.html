@@ -6,10 +6,9 @@
     <title>VibeCraft Mobile</title>
     <style>
         * { touch-action: none; user-select: none; -webkit-user-select: none; box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #111; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #111; font-family: 'Segoe UI', sans-serif; }
         
-        /* ---------------- UI MENUS ---------------- */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(18, 18, 24, 0.92); color: white; z-index: 100; padding: 20px; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(18, 18, 24, 0.94); color: white; z-index: 100; padding: 20px; }
         .hidden { display: none !important; }
         
         h1 { font-size: 36px; margin-bottom: 20px; color: #55a02e; text-shadow: 2px 2px #000; text-transform: uppercase; letter-spacing: 2px; }
@@ -17,16 +16,14 @@
         
         label { font-size: 14px; color: #aaa; margin-bottom: -6px; }
         input[type="text"], input[type="number"], select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #333; background: #222; color: #fff; font-size: 16px; outline: none; text-align: center; }
-        input[type="text"]:focus, select:focus { border-color: #55a02e; }
         
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: #55a02e; color: white; font-size: 16px; font-weight: bold; cursor: pointer; text-shadow: 1px 1px #000; box-shadow: 0 4px #3b731f; transition: transform 0.1s; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: #55a02e; color: white; font-size: 16px; font-weight: bold; cursor: pointer; text-shadow: 1px 1px #000; box-shadow: 0 4px #3b731f; }
         .btn:active { transform: translateY(3px); box-shadow: 0 1px #3b731f; }
         .btn-secondary { background: #444; box-shadow: 0 4px #222; }
-        .btn-secondary:active { box-shadow: 0 1px #222; }
 
-        .code-display { font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #ffca28; background: #222; padding: 10px; border-radius: 8px; text-align: center; border: 2px dashed #ffca28; }
+        .code-display { font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #ffca28; background: #222; padding: 12px; border-radius: 8px; text-align: center; border: 2px dashed #ffca28; margin: 10px 0; }
+        .status-msg { font-size: 14px; color: #4caf50; text-align: center; min-height: 20px; }
 
-        /* ---------------- GAME HUD ---------------- */
         #crosshair { position: absolute; top: 40%; left: 50%; width: 8px; height: 8px; background: rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; }
         #look-zone { position: absolute; top: 0; left: 0; width: 100%; height: 70%; z-index: 5; }
         #controls-zone { position: absolute; bottom: 0; left: 0; width: 100%; height: 30%; z-index: 10; pointer-events: none; }
@@ -40,7 +37,7 @@
 </head>
 <body>
 
-    <!-- HUD Overlay -->
+    <!-- HUD -->
     <div id="crosshair"></div>
     <div id="look-zone"></div>
     <div id="player-tag">Player: Guest</div>
@@ -67,9 +64,8 @@
         <div class="menu-box">
             <button class="btn" id="btn-mode-single">Single Player</button>
             <button class="btn" id="btn-mode-host">Host Game (Colab)</button>
-            <button class="btn" id="btn-mode-join">Join Host (Code)</button>
-            <button class="btn btn-secondary" id="btn-mode-net">Join via Internet</button>
-            <button class="btn btn-secondary" id="btn-back-main" style="margin-top: 10px;">Back</button>
+            <button class="btn" id="btn-mode-join">Join Game (Code)</button>
+            <button class="btn btn-secondary" id="btn-back-main">Back</button>
         </div>
     </div>
 
@@ -77,11 +73,10 @@
     <div id="menu-host" class="overlay hidden">
         <h1>Hosting Game</h1>
         <div class="menu-box">
-            <label>Colab Server URL</label>
-            <input type="text" id="server-url" placeholder="wss://xxxx.ngrok-free.app">
-            <label>Your Room Code</label>
+            <label>Your Room Code:</label>
             <div id="host-code" class="code-display">------</div>
-            <button class="btn" id="btn-start-host">Start Server & Play</button>
+            <div id="host-status" class="status-msg">Auto-detecting Colab Server...</div>
+            <button class="btn" id="btn-start-host">Start & Play</button>
             <button class="btn btn-secondary" id="btn-back-play1">Back</button>
         </div>
     </div>
@@ -90,10 +85,9 @@
     <div id="menu-join" class="overlay hidden">
         <h1>Join Game</h1>
         <div class="menu-box">
-            <label>Colab Server URL</label>
-            <input type="text" id="join-server-url" placeholder="wss://xxxx.ngrok-free.app">
             <label>Enter 6-Digit Room Code</label>
             <input type="number" id="join-code" placeholder="123456">
+            <div id="join-status" class="status-msg" style="color:#ff9800;"></div>
             <button class="btn" id="btn-start-join">Connect & Play</button>
             <button class="btn btn-secondary" id="btn-back-play2">Back</button>
         </div>
@@ -103,21 +97,13 @@
     <div id="menu-settings" class="overlay hidden">
         <h1>Settings</h1>
         <div class="menu-box">
-            <label>Render Distance (Chunk Size)</label>
+            <label>Render Distance</label>
             <select id="setting-render">
-                <option value="32">32x32 (Low/Fast)</option>
+                <option value="32">32x32 (Fast)</option>
                 <option value="48">48x48 (Medium)</option>
-                <option value="64" selected>64x64 (High/Expanded)</option>
+                <option value="64" selected>64x64 (High)</option>
             </select>
-
-            <label>Look Sensitivity</label>
-            <select id="setting-sens">
-                <option value="0.003">Low</option>
-                <option value="0.005" selected>Medium</option>
-                <option value="0.008">High</option>
-            </select>
-
-            <button class="btn" id="btn-save-settings">Save & Exit</button>
+            <button class="btn" id="btn-save-settings">Save</button>
         </div>
     </div>
 
@@ -133,15 +119,10 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // --- GLOBAL CONFIG & STATE ---
-        let worldSize = 64; // Expanded terrain size
-        let cameraSens = 0.005;
-        let playerName = "Steve";
-        let roomCode = "";
-        let ws = null;
+        let worldSize = 64, cameraSens = 0.005;
+        let playerName = "Steve", roomCode = "", ws = null;
         let otherPlayers = {};
 
-        // --- UI NAVIGATION LOGIC ---
         const ui = {
             main: document.getElementById('menu-main'),
             play: document.getElementById('menu-play'),
@@ -162,45 +143,58 @@
         document.getElementById('btn-back-play1').onclick = () => showMenu(ui.play);
         document.getElementById('btn-back-play2').onclick = () => showMenu(ui.play);
 
-        document.getElementById('btn-mode-host').onclick = () => {
+        // AUTO-PULL COLAB SERVER URL
+        async function fetchAutoColabUrl() {
+            try {
+                const res = await fetch('https://jsonblob.com/api/jsonBlob/vibecraft-auto-server');
+                const data = await res.json();
+                if(data && data.server_url) return data.server_url;
+            } catch(e) { console.error("Auto-pull error:", e); }
+            return null;
+        }
+
+        document.getElementById('btn-mode-host').onclick = async () => {
             roomCode = Math.floor(100000 + Math.random() * 900000).toString();
             document.getElementById('host-code').innerText = roomCode;
             showMenu(ui.host);
+
+            const serverUrl = await fetchAutoColabUrl();
+            if(serverUrl) {
+                document.getElementById('host-status').innerText = "✅ Colab Server Connected!";
+                connectWebSocket(serverUrl, roomCode);
+            } else {
+                document.getElementById('host-status').innerText = "⚠️ Colab Server not running!";
+            }
         };
 
         document.getElementById('btn-mode-join').onclick = () => showMenu(ui.join);
 
-        document.getElementById('btn-save-settings').onclick = () => {
-            worldSize = parseInt(document.getElementById('setting-render').value);
-            cameraSens = parseFloat(document.getElementById('setting-sens').value);
-            showMenu(ui.main);
-        };
-
-        // --- GAME START TRIGGERS ---
-        document.getElementById('btn-mode-single').onclick = () => startGame();
-        document.getElementById('btn-mode-net').onclick = () => startGame();
-
-        document.getElementById('btn-start-host').onclick = () => {
-            const url = document.getElementById('server-url').value;
-            if(url) connectWebSocket(url, roomCode, true);
-            startGame();
-        };
-
-        document.getElementById('btn-start-join').onclick = () => {
-            const url = document.getElementById('join-server-url').value;
+        document.getElementById('btn-start-join').onclick = async () => {
             const code = document.getElementById('join-code').value;
-            if(url && code) connectWebSocket(url, code, false);
-            startGame();
+            if(!code || code.length !== 6) return;
+            
+            document.getElementById('join-status').innerText = "Finding Colab Server...";
+            const serverUrl = await fetchAutoColabUrl();
+            
+            if(serverUrl) {
+                connectWebSocket(serverUrl, code);
+                startGame();
+            } else {
+                document.getElementById('join-status').innerText = "Colab Server offline!";
+            }
         };
+
+        document.getElementById('btn-mode-single').onclick = () => startGame();
+        document.getElementById('btn-start-host').onclick = () => startGame();
+        document.getElementById('btn-save-settings').onclick = () => showMenu(ui.main);
 
         function startGame() {
             playerName = document.getElementById('username').value || "Steve";
             ui.tag.innerText = "Player: " + playerName;
-            showMenu(null); // Hide all overlays
+            showMenu(null);
             initGame();
         }
 
-        // --- PROCEDURAL TEXTURE GENERATOR ---
         function createPixelTexture(draw) {
             const canvas = document.createElement('canvas');
             canvas.width = 16; canvas.height = 16;
@@ -240,7 +234,6 @@
         const dirtMat = new THREE.MeshLambertMaterial({ map: dirtTex });
         const stoneMat = new THREE.MeshLambertMaterial({ map: stoneTex });
 
-        // --- THREE.JS ENGINE ---
         let scene, camera, renderer;
         function getTerrainHeight(x, z) {
             let h = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 6;
@@ -266,7 +259,6 @@
             sun.position.set(30, 60, 30);
             scene.add(sun);
 
-            // Terrain Instancing
             const geom = new THREE.BoxGeometry(1, 1, 1);
             const matrix = new THREE.Matrix4();
 
@@ -294,7 +286,6 @@
             animate();
         }
 
-        // --- CONTROLS & PHYSICS ---
         let moveX = 0, moveZ = 0, isJumping = false;
         let yaw = 0, pitch = 0;
 
@@ -332,7 +323,6 @@
             document.getElementById('btn-jump').ontouchstart = (e) => { e.preventDefault(); isJumping = true; };
             document.getElementById('btn-jump').ontouchend = () => isJumping = false;
 
-            // Camera Look Drag
             const look = document.getElementById('look-zone');
             let lookId = null, lx = 0, ly = 0;
             look.ontouchstart = (e) => { const t = e.changedTouches[0]; lookId = t.identifier; lx = t.clientX; ly = t.clientY; };
@@ -350,24 +340,21 @@
             window.ontouchend = (e) => { for(let t of e.changedTouches) if(t.identifier === lookId) lookId = null; };
         }
 
-        // --- WEBSOCKET MULTIPLAYER ---
-        function connectWebSocket(url, code, isHost) {
+        function connectWebSocket(url, code) {
             try {
                 ws = new WebSocket(url);
-                ws.onopen = () => {
-                    ws.send(JSON.stringify({ type: 'join', code: code, name: playerName }));
-                };
+                ws.onopen = () => ws.send(JSON.stringify({ type: 'join', code: code, name: playerName }));
                 ws.onmessage = (msg) => {
                     const data = JSON.parse(msg.data);
                     if(data.type === 'player_move') updateRemotePlayer(data);
                 };
-            } catch(e) { console.log("WS Error: ", e); }
+            } catch(e) { console.error("WS Error:", e); }
         }
 
         function updateRemotePlayer(data) {
             if(!otherPlayers[data.id]) {
                 const geom = new THREE.BoxGeometry(0.8, 1.8, 0.8);
-                const mat = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+                const mat = new THREE.MeshLambertMaterial({ color: 0x3388ff });
                 const mesh = new THREE.Mesh(geom, mat);
                 scene.add(mesh);
                 otherPlayers[data.id] = mesh;
@@ -375,7 +362,6 @@
             otherPlayers[data.id].position.set(data.x, data.y, data.z);
         }
 
-        // --- GAME LOOP ---
         const vel = new THREE.Vector3();
         let prevTime = performance.now(), canJump = false;
 
@@ -398,7 +384,6 @@
             if (camera.position.y < groundY) { vel.y = 0; camera.position.y = groundY; canJump = true; }
             if (isJumping && canJump) { vel.y = 14; canJump = false; }
 
-            // Sync Network Position
             if(ws && ws.readyState === WebSocket.OPEN && Math.random() < 0.2) {
                 ws.send(JSON.stringify({
                     type: 'move', code: roomCode,
