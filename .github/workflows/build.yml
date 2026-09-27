@@ -1,0 +1,50 @@
+name: Build Minecraft APK
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Capacitor & Android Tools
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          
+          # Isolate web files so Capacitor doesn't bundle node_modules into the APK
+          mkdir www
+          cp index.html www/
+          
+          # Initialize Capacitor and build the Android project
+          npx cap init MinecraftClone com.vibe.minecraft --web-dir www
+          npx cap add android
+          npx cap sync android
+
+      - name: Build Debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Minecraft-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
