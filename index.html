@@ -49,7 +49,7 @@
         }
         .menu-box { 
             width: 100%; 
-            max-width: 320px; 
+            max-width: 340px; 
             display: flex; 
             flex-direction: column; 
             gap: 12px; 
@@ -97,7 +97,39 @@
             border: 2px dashed #ffca28; 
             margin: 10px 0; 
         }
-        .status-msg { font-size: 14px; color: #4caf50; text-align: center; min-height: 20px; }
+        .status-msg { 
+            font-size: 13px; 
+            color: #4caf50; 
+            text-align: center; 
+            min-height: 24px; 
+            word-break: break-word; 
+            padding: 4px;
+        }
+
+        /* DIAGNOSTIC / ERROR MODAL */
+        #error-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .error-card {
+            background: #1e1e24;
+            border: 2px solid #ff5252;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 360px;
+            width: 100%;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .error-card h2 { color: #ff5252; margin-top: 0; font-size: 20px; }
+        .error-card p { font-size: 13px; line-height: 1.5; color: #ccc; white-space: pre-line; }
+        .error-card ul { font-size: 12px; padding-left: 20px; color: #aaa; }
 
         /* HUD & TOUCH CONTROLS */
         #crosshair { 
@@ -192,6 +224,15 @@
         <div id="btn-jump">▲</div>
     </div>
 
+    <!-- DIAGNOSTIC ERROR MODAL -->
+    <div id="error-modal" class="hidden">
+        <div class="error-card">
+            <h2 id="error-title">⚠️ Connection Error</h2>
+            <p id="error-body">Unable to establish connection.</p>
+            <button class="btn" style="margin-top:15px;" onclick="closeError()">Close & Retry</button>
+        </div>
+    </div>
+
     <!-- MAIN MENU -->
     <div id="menu-main" class="overlay">
         <h1>VibeCraft</h1>
@@ -221,7 +262,7 @@
         <div class="menu-box">
             <label>Give this 6-Digit Code to your friend:</label>
             <div id="host-code" class="code-display">------</div>
-            <div id="host-status" class="status-msg">Connecting to Hugging Face Server...</div>
+            <div id="host-status" class="status-msg">Connecting to Hugging Face...</div>
             <button class="btn" id="btn-start-host">Start & Play</button>
             <button class="btn btn-secondary" id="btn-back-play1">Back</button>
         </div>
@@ -233,7 +274,7 @@
         <div class="menu-box">
             <label>Enter Friend's 6-Digit Code</label>
             <input type="number" id="join-code" placeholder="123456">
-            <div id="join-status" class="status-msg" style="color:#ff9800;"></div>
+            <div id="join-status" class="status-msg"></div>
             <button class="btn" id="btn-start-join">Connect & Play</button>
             <button class="btn btn-secondary" id="btn-back-play2">Back</button>
         </div>
@@ -273,8 +314,8 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // --- FIXED SERVER CONFIGURATION ---
-        const HF_SERVER_URL = "wss://seraj-develops-minecraft-server.static.hf.space";
+        // Direct WebSocket endpoint for Hugging Face Spaces
+        const HF_SERVER_URL = "wss://seraj-develops-minecraft-server.hf.space";
 
         let worldSize = 64;
         let cameraSens = 0.005;
@@ -283,15 +324,26 @@
         let ws = null;
         let otherPlayers = {};
 
-        // --- UI NAVIGATION ---
+        // UI Helpers
         const ui = {
             main: document.getElementById('menu-main'),
             play: document.getElementById('menu-play'),
             host: document.getElementById('menu-host'),
             join: document.getElementById('menu-join'),
             settings: document.getElementById('menu-settings'),
-            tag: document.getElementById('player-tag')
+            tag: document.getElementById('player-tag'),
+            errModal: document.getElementById('error-modal'),
+            errTitle: document.getElementById('error-title'),
+            errBody: document.getElementById('error-body')
         };
+
+        window.closeError = () => ui.errModal.classList.add('hidden');
+
+        function showError(title, details) {
+            ui.errTitle.innerText = title;
+            ui.errBody.innerText = details;
+            ui.errModal.classList.remove('hidden');
+        }
 
         const showMenu = (menu) => {
             [ui.main, ui.play, ui.host, ui.join, ui.settings].forEach(m => m.classList.add('hidden'));
@@ -304,30 +356,99 @@
         document.getElementById('btn-back-play1').onclick = () => showMenu(ui.play);
         document.getElementById('btn-back-play2').onclick = () => showMenu(ui.play);
 
-        // --- HOSTING MODE ---
+        // --- ENHANCED WEBSOCKET CONNECTION & DIAGNOSTICS ---
+        function connectWebSocket(url, code, statusElementId, onConnectSuccess) {
+            const statusEl = document.getElementById(statusElementId);
+            if(statusEl) statusEl.innerText = "⏳ Initiating Handshake...";
+
+            if(ws) {
+                ws.close();
+                ws = null;
+            }
+
+            // 7-Second Timeout Detector
+            const timeoutTimer = setTimeout(() => {
+                if(!ws || ws.readyState !== WebSocket.OPEN) {
+                    if(statusEl) statusEl.innerText = "❌ Connection Timed Out";
+                    showError(
+                        "⌛ Server Timeout",
+                        `Could not connect to server in time:\n${url}\n\n` +
+                        `Most Likely Causes:\n` +
+                        `1. Your Hugging Face Space is set to PRIVATE (Set to PUBLIC in Space Settings).\n` +
+                        `2. Space is building/sleeping on Hugging Face.\n` +
+                        `3. File named 'App.py' instead of 'app.py' (case sensitivity issue).`
+                    );
+                }
+            }, 7000);
+
+            try {
+                ws = new WebSocket(url);
+
+                ws.onopen = () => {
+                    clearTimeout(timeoutTimer);
+                    if(statusEl) statusEl.innerText = "✅ Connected to Server!";
+                    ws.send(JSON.stringify({ type: 'join', code: code, name: playerName }));
+                    if(onConnectSuccess) onConnectSuccess();
+                };
+
+                ws.onmessage = (msg) => {
+                    try {
+                        const data = JSON.parse(msg.data);
+                        if(data.type === 'player_move') updateRemotePlayer(data);
+                    } catch(e) {}
+                };
+
+                ws.onerror = (err) => {
+                    clearTimeout(timeoutTimer);
+                    if(statusEl) statusEl.innerText = "❌ WebSocket Failed";
+                    console.error("WS Diagnostic Error:", err);
+                    showError(
+                        "🔌 Connection Failed",
+                        `Failed to open WebSocket stream to:\n${url}\n\n` +
+                        `Checklist:\n` +
+                        `• Open HF Space Settings and check 'Space Visibility' is PUBLIC.\n` +
+                        `• Check HF Space status is green 'Running'.`
+                    );
+                };
+
+                ws.onclose = (evt) => {
+                    clearTimeout(timeoutTimer);
+                    if(evt.code !== 1000) {
+                        if(statusEl) statusEl.innerText = `❌ Disconnected (Code ${evt.code})`;
+                        showError(
+                            `Disconnected (Code ${evt.code})`,
+                            `Server closed connection unexpectedly.\n` +
+                            `Reason: ${evt.reason || 'Abnormal Close (Usually Private Space or Server Crash)'}`
+                        );
+                    }
+                };
+
+            } catch(e) {
+                clearTimeout(timeoutTimer);
+                if(statusEl) statusEl.innerText = "❌ Setup Exception";
+                showError("Client Error", e.message);
+            }
+        }
+
+        // --- HOST & JOIN BUTTONS ---
         document.getElementById('btn-mode-host').onclick = () => {
             roomCode = Math.floor(100000 + Math.random() * 900000).toString();
             document.getElementById('host-code').innerText = roomCode;
             showMenu(ui.host);
 
-            document.getElementById('host-status').innerText = "Connecting to 24/7 Server...";
-            connectWebSocket(HF_SERVER_URL, roomCode, () => {
-                document.getElementById('host-status').innerText = "✅ Connected to Server!";
-            });
+            connectWebSocket(HF_SERVER_URL, roomCode, 'host-status');
         };
 
-        // --- JOINING MODE ---
         document.getElementById('btn-mode-join').onclick = () => showMenu(ui.join);
 
         document.getElementById('btn-start-join').onclick = () => {
             const code = document.getElementById('join-code').value;
             if(!code || code.length !== 6) {
-                document.getElementById('join-status').innerText = "Enter a valid 6-digit code!";
+                document.getElementById('join-status').innerText = "⚠️ Enter 6-digit code!";
                 return;
             }
             
-            document.getElementById('join-status').innerText = "Connecting to Server...";
-            connectWebSocket(HF_SERVER_URL, code, () => {
+            connectWebSocket(HF_SERVER_URL, code, 'join-status', () => {
                 startGame();
             });
         };
@@ -341,28 +462,6 @@
             showMenu(ui.main);
         };
 
-        function connectWebSocket(url, code, onConnect) {
-            try {
-                ws = new WebSocket(url);
-                ws.onopen = () => {
-                    ws.send(JSON.stringify({ type: 'join', code: code, name: playerName }));
-                    if(onConnect) onConnect();
-                };
-                ws.onmessage = (msg) => {
-                    const data = JSON.parse(msg.data);
-                    if(data.type === 'player_move') updateRemotePlayer(data);
-                };
-                ws.onerror = (err) => {
-                    console.error("WebSocket Error:", err);
-                    if(document.getElementById('join-status')) {
-                        document.getElementById('join-status').innerText = "Server Connection Failed!";
-                    }
-                };
-            } catch(e) { 
-                console.error("WS Initialization Error:", e); 
-            }
-        }
-
         function startGame() {
             playerName = document.getElementById('username').value || "Steve";
             ui.tag.innerText = "Player: " + playerName;
@@ -370,7 +469,7 @@
             initGame();
         }
 
-        // --- PROCEDURAL PIXEL TEXTURES ---
+        // --- PROCEDURAL TEXTURES & THREE.JS LOGIC ---
         function createPixelTexture(draw) {
             const canvas = document.createElement('canvas');
             canvas.width = 16; canvas.height = 16;
@@ -410,7 +509,6 @@
         const dirtMat = new THREE.MeshLambertMaterial({ map: dirtTex });
         const stoneMat = new THREE.MeshLambertMaterial({ map: stoneTex });
 
-        // --- THREE.JS GRAPHICS ---
         let scene, camera, renderer;
 
         function getTerrainHeight(x, z) {
@@ -437,7 +535,6 @@
             sun.position.set(30, 60, 30);
             scene.add(sun);
 
-            // Terrain Generation via Instanced Mesh
             const geom = new THREE.BoxGeometry(1, 1, 1);
             const matrix = new THREE.Matrix4();
 
@@ -465,7 +562,7 @@
             animate();
         }
 
-        // --- TOUCH CONTROLS ---
+        // --- CONTROLS & PHYSICS ---
         let moveX = 0, moveZ = 0, isJumping = false;
         let yaw = 0, pitch = 0;
 
@@ -493,12 +590,11 @@
                 }
             };
 
-            const resetJoy = (e) => {
+            window.ontouchend = (e) => {
                 for(let t of e.changedTouches) {
                     if(t.identifier === joyId) { joyId = null; moveX = 0; moveZ = 0; knob.style.transform = 'translate(0,0)'; }
                 }
             };
-            window.ontouchend = resetJoy;
 
             document.getElementById('btn-jump').ontouchstart = (e) => { e.preventDefault(); isJumping = true; };
             document.getElementById('btn-jump').ontouchend = () => isJumping = false;
@@ -520,7 +616,6 @@
             window.ontouchend = (e) => { for(let t of e.changedTouches) if(t.identifier === lookId) lookId = null; };
         }
 
-        // --- REALTIME MULTIPLAYER SYNC ---
         function updateRemotePlayer(data) {
             if(!otherPlayers[data.id]) {
                 const geom = new THREE.BoxGeometry(0.8, 1.8, 0.8);
@@ -532,7 +627,6 @@
             otherPlayers[data.id].position.set(data.x, data.y, data.z);
         }
 
-        // --- GAME LOOP & PHYSICS ---
         const vel = new THREE.Vector3();
         let prevTime = performance.now(), canJump = false;
 
@@ -555,7 +649,6 @@
             if (camera.position.y < groundY) { vel.y = 0; camera.position.y = groundY; canJump = true; }
             if (isJumping && canJump) { vel.y = 14; canJump = false; }
 
-            // Sync position to Hugging Face server
             if(ws && ws.readyState === WebSocket.OPEN && Math.random() < 0.2) {
                 ws.send(JSON.stringify({
                     type: 'move', code: roomCode,
